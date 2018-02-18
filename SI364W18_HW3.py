@@ -98,12 +98,12 @@ class Form(FlaskForm):
 # - the twitter username may NOT start with an "@" symbol (the template will put that in where it should appear)
 # - the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
     def validate_display_name(self, field):
-        if '@' in field.data:
-            raise ValidationError("Remove the '@' symbol")
         two_words = field.data.strip()
         if ' ' not in two_words:
             raise ValidationError("Display name must have at least 2 words")
-
+    def validate_username(self, field):
+        if '@' in field.data:
+            raise ValidationError("Remove the '@' symbol")
 # TODO 364: Make sure to check out the sample application linked in the readme to check if yours is like it!
 
 
@@ -146,7 +146,6 @@ def index():
     count = db.session.query(Tweets).count()
     context = {}
     context['num_tweets'] = count
-    # print(num_tweets)
     # If the form was posted to this route,
     ## Get the data from the form
     if form.validate_on_submit():
@@ -157,7 +156,6 @@ def index():
     ## If there is, save it in a variable: user
     ## Or if there is not, then create one and add it to the database
         u = User.query.filter_by(userName=username).first()
-        print('u')
         if u:
             user = u.userName
         else:
@@ -171,7 +169,7 @@ def index():
         t = Tweets.query.filter_by(tweetText = tweet_text).first()
         if t and user_id:
             flash('*** That tweet already exists from that user! ***')
-            redirect(url_for('see_all_tweets'))
+            return redirect(url_for('see_all_tweets'))
     ## Assuming we got past that redirect,
     ## Create a new tweet object with the text and user id
     ## And add it to the database
@@ -182,7 +180,7 @@ def index():
             db.session.add(t)
             flash("Tweet successfully added")
             db.session.commit()
-            redirect(url_for('index'))
+            return redirect(url_for('index'))
     # PROVIDED: If the form did NOT validate / was not submitted
     errors = [v for v in form.errors.values()]
     if len(errors) > 0:
